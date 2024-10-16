@@ -25,3 +25,6 @@ dist-ssr
 
 # Data
 db.json
+
+# Build artifacts
+dist/

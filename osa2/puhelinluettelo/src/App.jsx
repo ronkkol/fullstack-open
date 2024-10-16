@@ -82,10 +82,10 @@ const App = () => {
               setSuccess(null)
             }, 5000)
           })
-          .catch(() => {
+          .catch((error) => {
             setPersons(persons.filter((p) => p.id !== existing.id))
 
-            setError(
+            setError(error.response?.data?.error ??
               `Information of ${newName} has already been removed from server`
             )
             setTimeout(() => {
@@ -110,8 +110,8 @@ const App = () => {
           setSuccess(null)
         }, 5000)
       })
-      .catch(() => {
-        setError(`Failed to add ${newName}`)
+      .catch((error) => {
+        setError(error.response?.data?.error ?? `Failed to add ${newName}`)
         setTimeout(() => {
           setError(null)
         }, 5000)
@@ -133,10 +133,10 @@ const App = () => {
             setSuccess(null)
           }, 5000)
         })
-        .catch(() => {
+        .catch((error) => {
           setPersons(persons.filter((p) => p.id !== person.id))
 
-          setError(`Information of ${person.name} has already been removed from server`)
+          setError(error.response?.data?.error ?? `Information of ${person.name} has already been removed from server`)
           setTimeout(() => {
             setError(null)
           }, 5000)

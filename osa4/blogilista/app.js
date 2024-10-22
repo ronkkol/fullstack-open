@@ -1,11 +1,10 @@
 require('dotenv').config()
-const express = require('express')
-const app = express()
 const cors = require('cors')
-const { info } = require('./utils/logger')
-const { PORT, MONGODB_URI } = require('./utils/config')
-const blogRoutes = require('./controllers/blogs')
+const express = require('express')
 const mongoose = require('mongoose')
+const blogRoutes = require('./controllers/blogs')
+const { info } = require('./utils/logger')
+const { MONGODB_URI } = require('./utils/config')
 
 const mongoUrl = MONGODB_URI
 if (!mongoUrl) {
@@ -13,6 +12,8 @@ if (!mongoUrl) {
   process.exit(1)
 }
 mongoose.connect(mongoUrl)
+
+const app = express()
 
 app.use(cors())
 app.use(express.json())

@@ -1,13 +1,17 @@
+const jwt = require('jsonwebtoken')
 const { test, after, beforeEach, describe } = require('node:test')
 const assert = require('node:assert')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
 const helper = require('./helpers/blog_helper')
+const userHelper = require('./helpers/user_helper')
 const app = require('../app')
 const Blog = require('../models/blog')
-const { url } = require('node:inspector')
 
 const api = supertest(app)
+
+let token = null
+let user = null
 
 describe('when some blogs are initialized to the database', () => {
   beforeEach(async () => {
@@ -18,6 +22,14 @@ describe('when some blogs are initialized to the database', () => {
       return blogObject.save()
     })
     await Promise.all(promises)
+
+    const randomUser =
+      userHelper.initialUsers[
+        Math.floor(Math.random() * userHelper.initialUsers.length)
+      ]
+
+    const response = await api.post('/api/login').send(randomUser)
+    token = response.body.token
   })
 
   test('GET /api/blogs are returns json', async () => {
@@ -44,12 +56,17 @@ describe('when some blogs are initialized to the database', () => {
       url: 'https://example.com/blogs/new-blog',
       likes: 0
     }
+    const { id } = jwt.decode(token)
 
-    await api
+    const response = await api
       .post('/api/blogs')
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
+    const { user } = response.body
+    assert.strictEqual(user, id)
 
     const blogsAtEnd = await helper.blogsInDb()
     assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length + 1)
@@ -62,7 +79,12 @@ describe('when some blogs are initialized to the database', () => {
       url: 'https://example.com/blogs/new-blog'
     }
 
-    const response = await api.post('/api/blogs').send(newBlog)
+    const response = await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201)
     const { likes } = response.body
     assert.strictEqual(likes, 0)
   })
@@ -77,24 +99,94 @@ describe('when some blogs are initialized to the database', () => {
       author: 'New author'
     }
 
-    await api.post('/api/blogs').send(noTitle).expect(400)
-    await api.post('/api/blogs').send(noUrl).expect(400)
+    await api
+      .post('/api/blogs')
+      .send(noTitle)
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+    await api
+      .post('/api/blogs')
+      .send(noUrl)
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
+  })
+
+  test('POST /api/blogs responds with 401 if token is missing', async () => {
+    const newBlog = {
+      title: 'New blog',
+      url: 'https://example.com/blogs/new-blog'
+    }
+
+    await api.post('/api/blogs').send(newBlog).expect(401)
+  })
+
+  test('POST /api/blogs responds with 401 if token is invalid', async () => {
+    const newBlog = {
+      title: 'New blog',
+      url: 'https://example.com/blogs/new-blog'
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .withCredentials()
+      .set('Authorization', 'Bearer invalid-token')
+      .expect(401)
   })
 
   test('DELETE /api/blogs/:id deletes a blog post', async () => {
-    const blogsAtStart = await helper.blogsInDb()
-    const blogToDelete = blogsAtStart[0]
+    // Create a new blog post as user
+    const newBlog = {
+      title: 'New blog',
+      url: 'https://example.com/blogs/new-blog'
+    }
+    const response = await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201)
+    const { id } = response.body
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+    // Delete the blog post
+    await api
+      .delete(`/api/blogs/${id}`)
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204)
 
     const blogsAtEnd = await helper.blogsInDb()
-    assert(!blogsAtEnd.some((blog) => blog.id === blogToDelete.id))
+    assert(!blogsAtEnd.some((blog) => blog.id === id))
   })
 
   test('DELETE /api/blogs/:id responds with 404 if the blog post does not exist', async () => {
     const nonExistingId = await helper.nonExistingId()
 
-    await api.delete(`/api/blogs/${nonExistingId}`).expect(404)
+    await api
+      .delete(`/api/blogs/${nonExistingId}`)
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404)
+  })
+
+  test('DELETE /api/blogs/:id responds with 401 if token is missing', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const { id } = blogsAtStart[0]
+
+    await api.delete(`/api/blogs/${id}`).expect(401)
+  })
+
+  test('DELETE /api/blogs/:id responds with 401 if user does not own the post', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const { id } = blogsAtStart[0]
+
+    await api
+      .delete(`/api/blogs/${id}`)
+      .withCredentials()
+      .set('Authorization', `Bearer ${token}`)
+      .expect(401)
   })
 
   test('PUT /api/blogs/:id updates a blog post', async () => {

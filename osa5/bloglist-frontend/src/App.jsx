@@ -1,22 +1,58 @@
 import './style/main.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Blog from './components/Blog'
 import BlogForm from './components/BlogForm'
 import LoginForm from './components/LoginForm'
 import Notification from './components/Notification'
 import blogService from './services/blogs'
 import loginService from './services/login'
+import Toggleable from './components/Toggleable'
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
   const [user, setUser] = useState(null)
   const [errorMessage, setErrorMessage] = useState(null)
   const [successMessage, setSuccessMessage] = useState(null)
+  const blogFormRef = useRef()
 
   const onLogout = () => {
     loginService.clearData()
     blogService.setToken(undefined)
     setUser(null)
+  }
+
+  const onLike = ({ id, likes, title }) => {
+    setBlogs(
+      blogs
+        .map((blog) => (blog.id === id ? { ...blog, likes: likes } : blog))
+        .sort((a, b) => b.likes - a.likes)
+    )
+    setSuccessMessage(`liked ${title}`)
+    setTimeout(() => {
+      setSuccessMessage(null)
+    }, 5000)
+  }
+
+  const onLikeFailed = () => {
+    setErrorMessage('failed to like post')
+    setTimeout(() => {
+      setErrorMessage(null)
+    }, 5000)
+  }
+
+  const onDelete = (id) => {
+    setBlogs(blogs.filter((blog) => blog.id !== id))
+    setSuccessMessage('post deleted')
+    setTimeout(() => {
+      setSuccessMessage(null)
+    }, 5000)
+  }
+
+  const onDeleteFailed = () => {
+    setErrorMessage('failed to delete post')
+    setTimeout(() => {
+      setErrorMessage(null)
+    }, 5000)
   }
 
   const onLogin = async (username, password) => {
@@ -46,10 +82,11 @@ const App = () => {
   const onSubmit = async (title, author, url) => {
     try {
       const newBlog = await blogService.create({ title, author, url })
-      setBlogs(blogs.concat(newBlog))
+      setBlogs(blogs.concat(newBlog).sort((a, b) => b.likes - a.likes))
       setSuccessMessage(
         `a new blog ${newBlog.title} by ${newBlog.author} added`
       )
+      blogFormRef.current.toggleVisibility()
       setTimeout(() => {
         setSuccessMessage(null)
       }, 5000)
@@ -63,7 +100,9 @@ const App = () => {
   }
 
   useEffect(() => {
-    blogService.getAll().then((blogs) => setBlogs(blogs))
+    blogService
+      .getAll()
+      .then((blogs) => setBlogs(blogs.sort((a, b) => b.likes - a.likes)))
   }, [])
 
   useEffect(() => {
@@ -99,11 +138,21 @@ const App = () => {
         {user.name} logged in <button onClick={onLogout}>logout</button>
       </div>
       <br />
-      <div>
+      <Toggleable buttonLabel="new post" ref={blogFormRef}>
         <h2>create new</h2>
         <BlogForm onSubmit={onSubmit} />
+      </Toggleable>
+      <div>
         {blogs.map((blog) => (
-          <Blog key={blog.id} blog={blog} />
+          <Blog
+            key={blog.id}
+            blog={blog}
+            isOwnedByUser={blog.user && user.id === blog.user.id}
+            onLike={onLike}
+            onLikeFailed={onLikeFailed}
+            onDelete={onDelete}
+            onDeleteFailed={onDeleteFailed}
+          />
         ))}
       </div>
     </div>

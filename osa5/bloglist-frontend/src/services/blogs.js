@@ -16,10 +16,25 @@ const create = async ({ title, author, url }) => {
     headers: { Authorization: token }
   }
 
-  console.info('config:', config)
-
   const response = await axios.post(baseUrl, { title, author, url }, config)
   return response.data
 }
 
-export default { setToken, getAll, create }
+const update = async (id, input) => {
+  const config = {
+    headers: { Authorization: token }
+  }
+
+  const response = await axios.put(`${baseUrl}/${id}`, input, config)
+  return response.data
+}
+
+const deletePost = async (id) => {
+  const config = {
+    headers: { Authorization: token }
+  }
+
+  await axios.delete(`${baseUrl}/${id}`, config)
+}
+
+export default { setToken, getAll, create, update, deletePost }

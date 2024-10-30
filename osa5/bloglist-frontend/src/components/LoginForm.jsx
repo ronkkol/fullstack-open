@@ -5,14 +5,16 @@ const LoginForm = ({ onSubmit }) => {
   const [password, setPassword] = useState('')
 
   return (
-    <form onSubmit={(event) => {
+    <form
+      onSubmit={(event) => {
         event.preventDefault()
         setUsername('')
         setPassword('')
         onSubmit(username, password)
-    }}>
+      }}
+    >
       <div>
-        username: 
+        username:
         <input
           type="text"
           value={username}
@@ -21,7 +23,7 @@ const LoginForm = ({ onSubmit }) => {
         />
       </div>
       <div>
-        password: 
+        password:
         <input
           type="password"
           value={password}

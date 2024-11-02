@@ -82,7 +82,9 @@ const App = () => {
   const onSubmit = async (title, author, url) => {
     try {
       const newBlog = await blogService.create({ title, author, url })
-      setBlogs(blogs.concat(newBlog).sort((a, b) => b.likes - a.likes))
+      setBlogs(
+        blogs.concat({ ...newBlog, user }).sort((a, b) => b.likes - a.likes)
+      )
       setSuccessMessage(
         `a new blog ${newBlog.title} by ${newBlog.author} added`
       )
@@ -142,18 +144,21 @@ const App = () => {
         <h2>create new</h2>
         <BlogForm onSubmit={onSubmit} />
       </Togglable>
-      <div>
-        {blogs.map((blog) => (
-          <Blog
-            key={blog.id}
-            blog={blog}
-            isOwnedByUser={blog.user && user.id === blog.user.id}
-            onLike={onLike}
-            onLikeFailed={onLikeFailed}
-            onDelete={onDelete}
-            onDeleteFailed={onDeleteFailed}
-          />
-        ))}
+      <div data-testid="bloglist">
+        {blogs.map((blog) => {
+          console.info(user.id, blog.user.id)
+          return (
+            <Blog
+              key={blog.id}
+              blog={blog}
+              isOwnedByUser={blog.user && user.id === blog.user.id}
+              onLike={onLike}
+              onLikeFailed={onLikeFailed}
+              onDelete={onDelete}
+              onDeleteFailed={onDeleteFailed}
+            />
+          )
+        })}
       </div>
     </div>
   )

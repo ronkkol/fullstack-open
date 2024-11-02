@@ -6,6 +6,7 @@ const mongoose = require('mongoose')
 const blogRoutes = require('./controllers/blogs')
 const userRoutes = require('./controllers/users')
 const loginRoutes = require('./controllers/login')
+const testRoutes = require('./controllers/test')
 const { info } = require('./utils/logger')
 const { MONGODB_URI } = require('./utils/config')
 const errorHandler = require('./middleware/errors')
@@ -28,6 +29,11 @@ app.use(tokenExtractor)
 app.use('/api/blogs', userExtractor, blogRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/login', loginRoutes)
+
+if (process.env.NODE_ENV === 'test') {
+  app.use('/api/testing', testRoutes)
+}
+
 app.use(errorHandler)
 
 module.exports = app

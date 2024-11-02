@@ -19,6 +19,7 @@ const BlogForm = ({ onSubmit }) => {
         <label for="title">title:</label>
         <input
           type="text"
+          data-testid="blogform-title"
           value={title}
           name="title"
           id="title"
@@ -29,6 +30,7 @@ const BlogForm = ({ onSubmit }) => {
         <label for="author">author:</label>
         <input
           type="text"
+          data-testid="blogform-author"
           value={author}
           name="author"
           id="author"
@@ -39,6 +41,7 @@ const BlogForm = ({ onSubmit }) => {
         <label for="url">url:</label>
         <input
           type="text"
+          data-testid="blogform-url"
           value={url}
           name="url"
           id="url"

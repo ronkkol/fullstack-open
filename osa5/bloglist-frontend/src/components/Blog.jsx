@@ -55,14 +55,19 @@ const Blog = ({
       </button>
       {showMore && (
         <div>
-          {blog.url}
-          <br />
-          likes {blog.likes}
-          <button onClick={handleLike}>like</button>
-          <br />
-          {blog.user && blog.user.name}
-          <br />
-          {isOwnedByUser && <button onClick={handleDelete}>remove</button>}
+          <div>{blog.url}</div>
+          <div>
+            <span data-testid="blog-likecount">likes {blog.likes}</span>
+            <button onClick={handleLike} data-testid="blog-likebutton">
+              like
+            </button>
+          </div>
+          {blog.user && <div>{blog.user.name}</div>}
+          {isOwnedByUser && (
+            <button onClick={handleDelete} data-testid="blog-removebutton">
+              remove
+            </button>
+          )}
         </div>
       )}
     </div>
